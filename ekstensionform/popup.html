@@ -247,14 +247,9 @@
     </div>
 
     <div class="field">
-      <label>Limit Foto (Nomor Akhir)</label>
-      <div style="display: flex; gap: 8px; align-items: center;">
-        <input type="number" id="inputLimit" value="10" min="1" style="flex: 1;" />
-        <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); text-transform: none; letter-spacing: 0; cursor: pointer; white-space: nowrap;">
-          <input type="checkbox" id="chkUnlimited" style="accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer;" />
-          ♾️ Unlimited
-        </label>
-      </div>
+      <label>Jumlah Foto di Folder</label>
+      <input type="number" id="inputLimit" value="49" min="1" />
+      <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">🔄 Setelah foto ke-49, otomatis balik ke foto 1 (loop terus sampai Stop)</div>
     </div>
 
     <div class="field">

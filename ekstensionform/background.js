@@ -445,8 +445,10 @@ function runInsidePickerFrame(folderName, index) {
 // ── JALANKAN SATU ITERASI FORM ───────────────────────────────────────────────
 async function runSingleIteration(tabId, nama, email, folderName, index, limit) {
   isBotRunning = true; // Kunci agar event onUpdated diabaikan selama iterasi berjalan
-  const isUnlimited = (limit === 0);
-  const label = isUnlimited ? `#${index}` : `${index}/${limit}`;
+  // Hitung nomor foto dengan loop: index 1→limit→1→limit...
+  const photoNumber = ((index - 1) % limit) + 1;
+  const cycleNum = Math.floor((index - 1) / limit) + 1;
+  const label = `Foto ${photoNumber}/${limit} (Siklus ${cycleNum})`;
   await updateStatus(`🚀 [${label}] ✉️ ${email} — Menghubungkan debugger…`, 'running', true);
   
   try {
@@ -518,7 +520,7 @@ async function runSingleIteration(tabId, nama, email, folderName, index, limit) 
     }
 
     // Polling dan injeksi ke Drive Picker iframe
-    await updateStatus(`⏳ [${label}] Mencari & memilih "${index}" di folder "${folderName}"…`, 'running', true);
+    await updateStatus(`⏳ [${label}] Mencari & memilih "${photoNumber}" di folder "${folderName}"…`, 'running', true);
     let pickerSuccess = false;
     const pickerStart = Date.now();
 
@@ -529,7 +531,7 @@ async function runSingleIteration(tabId, nama, email, folderName, index, limit) 
       const results = await chrome.scripting.executeScript({
         target: { tabId, allFrames: true },
         func: runInsidePickerFrame,
-        args: [folderName, index]
+        args: [folderName, photoNumber]
       });
 
       // Cek apakah salah satu frame mengembalikan hasil 'File selected!'
@@ -542,7 +544,7 @@ async function runSingleIteration(tabId, nama, email, folderName, index, limit) 
     }
 
     if (!pickerSuccess) {
-      throw new Error(`Gagal mendeteksi/memilih file "${index}" di folder "${folderName}".`);
+      throw new Error(`Gagal mendeteksi/memilih file "${photoNumber}" di folder "${folderName}".`);
     }
 
     // Tunggu sampai jendela picker menutup dan kartu file muncul di halaman utama
@@ -551,7 +553,7 @@ async function runSingleIteration(tabId, nama, email, folderName, index, limit) 
     const fileStart = Date.now();
 
     while (Date.now() - fileStart < 20000) { // maksimal 20 detik
-      fileUploaded = await inPage(tabId, (idx) => {
+      fileUploaded = await inPage(tabId, (pNum) => {
         // Cek 1: Selector class tradisional Google Forms
         const card = document.querySelector(
           '.appsMaterialWizFilepickerFile, .quantumWizFilepickerFile, [class*="FilepickerFile"], [class*="exportFileCard"]'
@@ -564,7 +566,7 @@ async function runSingleIteration(tabId, nama, email, folderName, index, limit) 
           const txt = el.textContent.trim().toLowerCase();
           const rect = el.getBoundingClientRect();
           if (rect.width === 0) return false;
-          return txt === `${idx}.png` || txt === `${idx}.jpg` || txt === `${idx}.jpeg` || txt === `${idx}`;
+          return txt === `${pNum}.png` || txt === `${pNum}.jpg` || txt === `${pNum}.jpeg` || txt === `${pNum}`;
         });
         if (hasFilename) return true;
 
@@ -576,7 +578,7 @@ async function runSingleIteration(tabId, nama, email, folderName, index, limit) 
         if (removeBtn && removeBtn.getBoundingClientRect().width > 0) return true;
 
         return false;
-      }, [index]);
+      }, [photoNumber]);
 
       if (fileUploaded) break;
       await sleep(1000);
@@ -637,66 +639,59 @@ async function runSingleIteration(tabId, nama, email, folderName, index, limit) 
     await chrome.storage.local.set({ uploadCount: newCount });
     console.log(`[BG-COUNTER] Upload berhasil: ${newCount}`);
 
-    // ❕ ITERASI SELANJUTNYA via "Kirim jawaban lain" ❕
+    // ❕ ITERASI SELANJUTNYA via "Kirim jawaban lain" (LOOP TERUS) ❕
     const nextIndex = index + 1;
-    if (!isUnlimited && nextIndex > limit) {
-      // Selesai batch (mode terbatas)
-      await chrome.storage.local.set({
-        botActive: false,
-        isRunning: false,
-        statusText: `✅ Selesai! Berhasil memproses ${limit} foto. Total upload: ${newCount}`,
-        statusMode: 'success'
+    const nextPhotoNumber = ((nextIndex - 1) % limit) + 1;
+    const nextCycle = Math.floor((nextIndex - 1) / limit) + 1;
+
+    // Hitung email berikutnya dengan rotasi
+    const emailsData = await chrome.storage.local.get(['emails']);
+    const emailList = Array.isArray(emailsData.emails) ? emailsData.emails : [email];
+    const nextEmail = emailList[(nextIndex - 1) % emailList.length];
+    const nextLabel = `Foto ${nextPhotoNumber}/${limit} (Siklus ${nextCycle})`;
+
+    await chrome.storage.local.set({
+      currentIndex: nextIndex,
+      statusText: `🔄 [${nextLabel}] ✉️ ${nextEmail} — Upload: ${newCount}`,
+      statusMode: 'running'
+    });
+
+    await updateStatus(`🔗 [${label}] Klik "Kirim jawaban lain".`, 'running', true);
+    await sleep(1000);
+
+    // Cari dan klik link "Kirim jawaban lain" di halaman sukses
+    const clicked = await inPage(tabId, () => {
+      const allLinks = [...document.querySelectorAll('a')];
+      const link = allLinks.find(el => {
+        const txt = el.textContent.replace(/\s+/g, ' ').trim().toLowerCase();
+        return txt.includes('kirim jawaban lain') || txt.includes('submit another response') || txt.includes('jawaban lain');
       });
-    } else {
-      // Simpan index selanjutnya (unlimited atau belum mencapai limit)
-      // Hitung email berikutnya dengan rotasi
-      const emailsData = await chrome.storage.local.get(['emails']);
-      const emailList = Array.isArray(emailsData.emails) ? emailsData.emails : [email];
-      const nextEmail = emailList[(nextIndex - 1) % emailList.length];
-      const nextLabel = isUnlimited ? `#${nextIndex}` : `${nextIndex}/${limit}`;
+      if (!link) return false;
+      link.click();
+      return true;
+    });
 
-      await chrome.storage.local.set({
-        currentIndex: nextIndex,
-        statusText: `🔄 [${nextLabel}] ✉️ ${nextEmail} — Lanjut ke foto berikutnya. (Upload: ${newCount})`,
-        statusMode: 'running'
-      });
-
-      await updateStatus(`🔗 [${label}] Klik "Kirim jawaban lain".`, 'running', true);
-      await sleep(1000);
-
-      // Cari dan klik link "Kirim jawaban lain" di halaman sukses
-      const clicked = await inPage(tabId, () => {
-        const allLinks = [...document.querySelectorAll('a')];
-        const link = allLinks.find(el => {
-          const txt = el.textContent.replace(/\s+/g, ' ').trim().toLowerCase();
-          return txt.includes('kirim jawaban lain') || txt.includes('submit another response') || txt.includes('jawaban lain');
-        });
-        if (!link) return false;
-        link.click();
-        return true;
-      });
-
-      if (!clicked) {
-        // Fallback: redirect ke formUrl jika tombol tidak ditemukan
-        console.warn('[BG-AUTOFILL] Link "Kirim jawaban lain" tidak ditemukan, fallback ke redirect.');
-        const storageData = await chrome.storage.local.get(['formUrl']);
-        isBotRunning = false;
-        if (storageData.formUrl) {
-          await chrome.tabs.update(tabId, { url: storageData.formUrl });
-        } else {
-          await chrome.tabs.reload(tabId);
-        }
+    if (!clicked) {
+      // Fallback: redirect ke formUrl jika tombol tidak ditemukan
+      console.warn('[BG-AUTOFILL] Link "Kirim jawaban lain" tidak ditemukan, fallback ke redirect.');
+      const storageData = await chrome.storage.local.get(['formUrl']);
+      isBotRunning = false;
+      if (storageData.formUrl) {
+        await chrome.tabs.update(tabId, { url: storageData.formUrl });
       } else {
-        // Link berhasil diklik - onUpdated listener akan menangkap halaman form baru
-        isBotRunning = false;
+        await chrome.tabs.reload(tabId);
       }
+    } else {
+      // Link berhasil diklik - onUpdated listener akan menangkap halaman form baru
+      isBotRunning = false;
     }
   } catch (err) {
     console.error('[BG-AUTOFILL-ERR]', err);
+    const countData2 = await chrome.storage.local.get(['uploadCount']);
     await chrome.storage.local.set({
       botActive: false,
       isRunning: false,
-      statusText: `❌ Gagal pada foto ${index}: ${err.message}`,
+      statusText: `❌ Gagal pada foto ${photoNumber} (iterasi ${index}): ${err.message} | Upload: ${countData2.uploadCount || 0}`,
       statusMode: 'error'
     });
   } finally {
@@ -718,25 +713,16 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   }
 
   const data = await chrome.storage.local.get([
-    'botActive', 'tabId', 'nama', 'emails', 'email', 'folderName', 'currentIndex', 'limit', 'unlimited'
+    'botActive', 'tabId', 'nama', 'emails', 'email', 'folderName', 'currentIndex', 'limit'
   ]);
   
   if (!data.botActive || tabId !== data.tabId) return;
 
   const index = parseInt(data.currentIndex, 10) || 1;
-  const limit = parseInt(data.limit, 10) || 0;
-  const isUnlimited = !!data.unlimited || limit === 0;
+  const limit = parseInt(data.limit, 10) || 49;
 
-  if (!isUnlimited && index > limit) {
-    const countData = await chrome.storage.local.get(['uploadCount']);
-    await chrome.storage.local.set({
-      botActive: false,
-      isRunning: false,
-      statusText: `✅ Semua iterasi selesai! Total upload: ${countData.uploadCount || 0}`,
-      statusMode: 'success'
-    });
-    return;
-  }
+  // Bot tidak pernah berhenti otomatis — hanya berhenti via tombol Stop
+  // Foto di-loop otomatis via modulo di runSingleIteration
 
   // Rotasi email: pakai modulo agar kembali ke awal jika iterasi melebihi jumlah email
   const emailList = Array.isArray(data.emails) ? data.emails : [data.email || ''];
