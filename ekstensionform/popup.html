@@ -190,6 +190,25 @@
     .btn-stop:active:not(:disabled) { transform: translateY(0); }
     .btn-stop:disabled { opacity: 0.5; cursor: not-allowed; }
 
+    /* ── Upload Counter ── */
+    .upload-counter {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(79, 124, 255, 0.1));
+      border: 1px solid rgba(34, 197, 94, 0.25);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .counter-icon { font-size: 20px; }
+    .counter-info { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+    .counter-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .counter-value {
+      font-size: 22px; font-weight: 700;
+      background: linear-gradient(135deg, var(--success), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
     /* ── Footer ── */
     .footer {
       padding: 10px 20px;
@@ -229,7 +248,21 @@
 
     <div class="field">
       <label>Limit Foto (Nomor Akhir)</label>
-      <input type="number" id="inputLimit" value="10" min="1" />
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <input type="number" id="inputLimit" value="10" min="1" style="flex: 1;" />
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); text-transform: none; letter-spacing: 0; cursor: pointer; white-space: nowrap;">
+          <input type="checkbox" id="chkUnlimited" style="accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer;" />
+          ♾️ Unlimited
+        </label>
+      </div>
+    </div>
+
+    <div class="upload-counter" id="uploadCounter">
+      <div class="counter-icon">📊</div>
+      <div class="counter-info">
+        <span class="counter-label">Total Upload Berhasil</span>
+        <span class="counter-value" id="counterValue">0</span>
+      </div>
     </div>
 
     <div class="status-bar" id="statusBar">

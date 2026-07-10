@@ -445,7 +445,9 @@ function runInsidePickerFrame(folderName, index) {
 // ── JALANKAN SATU ITERASI FORM ───────────────────────────────────────────────
 async function runSingleIteration(tabId, nama, email, folderName, index, limit) {
   isBotRunning = true; // Kunci agar event onUpdated diabaikan selama iterasi berjalan
-  await updateStatus(`🚀 [${index}/${limit}] ✉️ ${email} — Menghubungkan debugger…`, 'running', true);
+  const isUnlimited = (limit === 0);
+  const label = isUnlimited ? `#${index}` : `${index}/${limit}`;
+  await updateStatus(`🚀 [${label}] ✉️ ${email} — Menghubungkan debugger…`, 'running', true);
   
   try {
     await chrome.debugger.attach({ tabId }, '1.3');
@@ -459,42 +461,42 @@ async function runSingleIteration(tabId, nama, email, folderName, index, limit) 
   try {
     // ── TAHAP 1 ──────────────────────────────────────────────────────────────
     await checkStopped();
-    await updateStatus(`📝 [${index}/${limit}] TAHAP 1: Mengisi Nama & Email…`, 'running', true);
+    await updateStatus(`📝 [${label}] TAHAP 1: Mengisi Nama & Email…`, 'running', true);
     await sleep(600);
     await fillInputs(tabId, nama, email);
     await sleep(400);
 
     await checkStopped();
-    await updateStatus(`🖱️ [${index}/${limit}] TAHAP 1: Memilih UP3 Purwokerto…`, 'running', true);
+    await updateStatus(`🖱️ [${label}] TAHAP 1: Memilih UP3 Purwokerto…`, 'running', true);
     await pilihDropdown(tabId, 0, 'UP3 Purwokerto');
 
     await checkStopped();
-    await updateStatus(`➡️ [${index}/${limit}] TAHAP 1: Klik Berikutnya…`, 'running', true);
+    await updateStatus(`➡️ [${label}] TAHAP 1: Klik Berikutnya…`, 'running', true);
     await klikBerikutnya(tabId);
 
     // ── TAHAP 2 ──────────────────────────────────────────────────────────────
     await checkStopped();
-    await updateStatus(`🖱️ [${index}/${limit}] TAHAP 2: Memilih ULP Wangon…`, 'running', true);
+    await updateStatus(`🖱️ [${label}] TAHAP 2: Memilih ULP Wangon…`, 'running', true);
     await sleep(500);
     await pilihDropdown(tabId, 0, 'ULP Wangon');
 
     await checkStopped();
-    await updateStatus(`➡️ [${index}/${limit}] TAHAP 2: Klik Berikutnya…`, 'running', true);
+    await updateStatus(`➡️ [${label}] TAHAP 2: Klik Berikutnya…`, 'running', true);
     await klikBerikutnya(tabId);
 
     // ── TAHAP 3 ──────────────────────────────────────────────────────────────
     await checkStopped();
-    await updateStatus(`🖱️ [${index}/${limit}] TAHAP 3: Memilih Bidang NIAGA/ PP…`, 'running', true);
+    await updateStatus(`🖱️ [${label}] TAHAP 3: Memilih Bidang NIAGA/ PP…`, 'running', true);
     await sleep(500);
     await pilihDropdown(tabId, 0, 'NIAGA/ PP');
 
     await checkStopped();
-    await updateStatus(`🖱️ [${index}/${limit}] TAHAP 3: Memilih Keterangan KANTOR ULP…`, 'running', true);
+    await updateStatus(`🖱️ [${label}] TAHAP 3: Memilih Keterangan KANTOR ULP…`, 'running', true);
     await pilihDropdown(tabId, 1, 'KANTOR ULP');
 
     // ── PROSES UPLOAD FILE DARI GOOGLE DRIVE (OTOMATIS) ──────────────────────
     await checkStopped();
-    await updateStatus(`📁 [${index}/${limit}] TAHAP 3: Membuka Google Picker…`, 'running', true);
+    await updateStatus(`📁 [${label}] TAHAP 3: Membuka Google Picker…`, 'running', true);
     await sleep(500);
     
     // Klik "Tambahkan File"
@@ -516,7 +518,7 @@ async function runSingleIteration(tabId, nama, email, folderName, index, limit) 
     }
 
     // Polling dan injeksi ke Drive Picker iframe
-    await updateStatus(`⏳ [${index}/${limit}] Mencari & memilih "${index}" di folder "${folderName}"…`, 'running', true);
+    await updateStatus(`⏳ [${label}] Mencari & memilih "${index}" di folder "${folderName}"…`, 'running', true);
     let pickerSuccess = false;
     const pickerStart = Date.now();
 
@@ -544,7 +546,7 @@ async function runSingleIteration(tabId, nama, email, folderName, index, limit) 
     }
 
     // Tunggu sampai jendela picker menutup dan kartu file muncul di halaman utama
-    await updateStatus(`⏳ [${index}/${limit}] Menunggu konfirmasi file di form…`, 'running', true);
+    await updateStatus(`⏳ [${label}] Menunggu konfirmasi file di form…`, 'running', true);
     let fileUploaded = false;
     const fileStart = Date.now();
 
@@ -587,7 +589,7 @@ async function runSingleIteration(tabId, nama, email, folderName, index, limit) 
 
     // ❕ KLIK TOMBOL KIRIM (SUBMIT) ❕
     await checkStopped();
-    await updateStatus(`📤 [${index}/${limit}] Mengklik tombol Kirim.`, 'running', true);
+    await updateStatus(`📤 [${label}] Mengklik tombol Kirim.`, 'running', true);
     await sleep(800);
 
     const submitCoords = await inPage(tabId, () => {
@@ -608,7 +610,7 @@ async function runSingleIteration(tabId, nama, email, folderName, index, limit) 
     await cdpClick(tabId, submitCoords.x, submitCoords.y);
 
     // Tunggu halaman sukses muncul
-    await updateStatus(`⏳ [${index}/${limit}] Menunggu konfirmasi pengiriman.`, 'running', true);
+    await updateStatus(`⏳ [${label}] Menunggu konfirmasi pengiriman.`, 'running', true);
     let submitted = false;
     const submitStart = Date.now();
     while (Date.now() - submitStart < 15000) {
@@ -629,30 +631,37 @@ async function runSingleIteration(tabId, nama, email, folderName, index, limit) 
       console.warn('[BG-AUTOFILL] Halaman sukses tidak terdeteksi, melanjutkan.');
     }
 
+    // ❕ UPDATE COUNTER UPLOAD ❕
+    const countData = await chrome.storage.local.get(['uploadCount']);
+    const newCount = (countData.uploadCount || 0) + 1;
+    await chrome.storage.local.set({ uploadCount: newCount });
+    console.log(`[BG-COUNTER] Upload berhasil: ${newCount}`);
+
     // ❕ ITERASI SELANJUTNYA via "Kirim jawaban lain" ❕
     const nextIndex = index + 1;
-    if (nextIndex > limit) {
-      // Selesai batch
+    if (!isUnlimited && nextIndex > limit) {
+      // Selesai batch (mode terbatas)
       await chrome.storage.local.set({
         botActive: false,
         isRunning: false,
-        statusText: `✅ Selesai! Berhasil memproses ${limit} foto.`,
+        statusText: `✅ Selesai! Berhasil memproses ${limit} foto. Total upload: ${newCount}`,
         statusMode: 'success'
       });
     } else {
-      // Simpan index selanjutnya
+      // Simpan index selanjutnya (unlimited atau belum mencapai limit)
       // Hitung email berikutnya dengan rotasi
       const emailsData = await chrome.storage.local.get(['emails']);
       const emailList = Array.isArray(emailsData.emails) ? emailsData.emails : [email];
       const nextEmail = emailList[(nextIndex - 1) % emailList.length];
+      const nextLabel = isUnlimited ? `#${nextIndex}` : `${nextIndex}/${limit}`;
 
       await chrome.storage.local.set({
         currentIndex: nextIndex,
-        statusText: `🔄 [${nextIndex}/${limit}] ✉️ ${nextEmail} — Lanjut ke foto berikutnya.`,
+        statusText: `🔄 [${nextLabel}] ✉️ ${nextEmail} — Lanjut ke foto berikutnya. (Upload: ${newCount})`,
         statusMode: 'running'
       });
 
-      await updateStatus(`🔗 [${index}/${limit}] Klik "Kirim jawaban lain".`, 'running', true);
+      await updateStatus(`🔗 [${label}] Klik "Kirim jawaban lain".`, 'running', true);
       await sleep(1000);
 
       // Cari dan klik link "Kirim jawaban lain" di halaman sukses
@@ -709,19 +718,21 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   }
 
   const data = await chrome.storage.local.get([
-    'botActive', 'tabId', 'nama', 'emails', 'email', 'folderName', 'currentIndex', 'limit'
+    'botActive', 'tabId', 'nama', 'emails', 'email', 'folderName', 'currentIndex', 'limit', 'unlimited'
   ]);
   
   if (!data.botActive || tabId !== data.tabId) return;
 
   const index = parseInt(data.currentIndex, 10) || 1;
-  const limit = parseInt(data.limit, 10) || 1;
+  const limit = parseInt(data.limit, 10) || 0;
+  const isUnlimited = !!data.unlimited || limit === 0;
 
-  if (index > limit) {
+  if (!isUnlimited && index > limit) {
+    const countData = await chrome.storage.local.get(['uploadCount']);
     await chrome.storage.local.set({
       botActive: false,
       isRunning: false,
-      statusText: '✅ Semua iterasi selesai!',
+      statusText: `✅ Semua iterasi selesai! Total upload: ${countData.uploadCount || 0}`,
       statusMode: 'success'
     });
     return;
