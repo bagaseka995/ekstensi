@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Google Form Autofill</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-dark    : #0f1117;
+      --bg-card    : #1a1d27;
+      --bg-input   : #22263a;
+      --accent     : #4f7cff;
+      --accent-glow: rgba(79, 124, 255, 0.35);
+      --success    : #22c55e;
+      --danger     : #ef4444;
+      --text       : #e8eaf6;
+      --text-muted : #8892b0;
+      --border     : rgba(255,255,255,0.08);
+      --radius     : 12px;
+    }
+
+    body {
+      width: 340px;
+      background: var(--bg-dark);
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(135deg, #1e2a5e 0%, #16213e 100%);
+      padding: 18px 20px 16px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+    .header::before {
+      content: '';
+      position: absolute;
+      top: -40px; right: -40px;
+      width: 120px; height: 120px;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+    .header-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      box-shadow: 0 4px 15px var(--accent-glow);
+    }
+    .header h1 { font-size: 14px; font-weight: 700; letter-spacing: 0.3px; }
+    .header p  { font-size: 11px; color: var(--text-muted); margin-left: 42px; }
+
+    /* ── Body ── */
+    .body { padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+
+    /* ── Input ── */
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label {
+      font-size: 11px; font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.6px;
+    }
+    .field input, .field textarea {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 13px; font-family: 'Inter', sans-serif;
+      color: var(--text); outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .field input:focus, .field textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .field input::placeholder, .field textarea::placeholder { color: var(--text-muted); opacity: 0.7; }
+    .field textarea {
+      resize: vertical;
+      line-height: 1.6;
+      font-family: 'Consolas', 'Courier New', monospace;
+    }
+    .email-count {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      text-align: right;
+    }
+    .email-count span { color: var(--accent); font-weight: 700; }
+
+    /* ── Steps ── */
+    .steps {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+    }
+    .steps-title {
+      font-size: 11px; font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.6px;
+      margin-bottom: 10px;
+    }
+    .step { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+    .step:last-child { margin-bottom: 0; }
+    .step-num {
+      width: 20px; height: 20px; min-width: 20px;
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700;
+      box-shadow: 0 2px 8px var(--accent-glow);
+    }
+    .step-text { font-size: 12px; color: var(--text-muted); line-height: 1.5; padding-top: 2px; }
+    .step-text strong { color: var(--text); font-weight: 600; }
+
+    /* ── Status Bar ── */
+    .status-bar {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      font-size: 12px; color: var(--text-muted);
+      min-height: 38px;
+      display: flex; align-items: center; gap: 8px;
+      transition: all 0.3s;
+    }
+    .status-bar.running { border-color: var(--accent); color: var(--text); }
+    .status-bar.success { border-color: var(--success); color: var(--success); }
+    .status-bar.error   { border-color: var(--danger);  color: var(--danger); }
+    .status-dot {
+      width: 8px; height: 8px; min-width: 8px;
+      border-radius: 50%; background: var(--text-muted);
+      transition: background 0.3s;
+    }
+    .status-bar.running .status-dot {
+      background: var(--accent);
+      animation: pulse 1s ease-in-out infinite;
+    }
+    .status-bar.success .status-dot { background: var(--success); }
+    .status-bar.error   .status-dot { background: var(--danger); }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.5; transform: scale(0.7); }
+    }
+
+    /* ── Button ── */
+    .btn-start {
+      width: 100%; padding: 12px;
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      border: none; border-radius: var(--radius);
+      color: #fff; font-family: 'Inter', sans-serif;
+      font-size: 14px; font-weight: 700;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      box-shadow: 0 4px 20px var(--accent-glow);
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+      letter-spacing: 0.3px;
+    }
+    .btn-start:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 28px var(--accent-glow);
+    }
+    .btn-start:active:not(:disabled) { transform: translateY(0); }
+    .btn-start:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-stop {
+      width: 100%; padding: 12px;
+      background: var(--danger);
+      border: none; border-radius: var(--radius);
+      color: #fff; font-family: 'Inter', sans-serif;
+      font-size: 14px; font-weight: 700;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+      letter-spacing: 0.3px;
+    }
+    .btn-stop:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+    }
+    .btn-stop:active:not(:disabled) { transform: translateY(0); }
+    .btn-stop:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Footer ── */
+    .footer {
+      padding: 10px 20px;
+      border-top: 1px solid var(--border);
+      text-align: center; font-size: 10px;
+      color: var(--text-muted); opacity: 0.6;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-logo">
+      <div class="logo-icon">⚡</div>
+      <h1>Form Autofill PLN</h1>
+    </div>
+    <p>Google Form Automation — PLN UP3 Purwokerto</p>
+  </div>
+
+  <div class="body">
+
+    <div class="field">
+      <label>Nama Pengisi</label>
+      <input type="text" id="inputNama" value="Bagas Eka Permana" placeholder="Bagas Eka Permana" />
+    </div>
+
+    <div class="field">
+      <label>Email (satu per baris, bergilir otomatis)</label>
+      <textarea id="inputEmail" rows="4" placeholder="email1@gmail.com&#10;email2@gmail.com&#10;email3@gmail.com">bagas@gmail.com</textarea>
+      <div class="email-count">Terdeteksi: <span id="emailCountNum">1</span> email</div>
+    </div>
+
+    <div class="field">
+      <label>Nama Folder Google Drive</label>
+      <input type="text" id="inputFolder" value="ss evidence" placeholder="ss evidence" />
+    </div>
+
+    <div class="field">
+      <label>Limit Foto (Nomor Akhir)</label>
+      <input type="number" id="inputLimit" value="10" min="1" />
+    </div>
+
+    <div class="status-bar" id="statusBar">
+      <div class="status-dot"></div>
+      <span id="statusText">Siap — masukkan data lalu klik Mulai</span>
+    </div>
+
+    <div style="display: flex; gap: 8px; margin-top: 4px;">
+      <button class="btn-start" id="btnStart" style="flex: 2;">
+        <span>▶</span> Mulai
+      </button>
+      <button class="btn-stop" id="btnStop" disabled style="flex: 1;">
+        <span>⏹</span> Stop
+      </button>
+    </div>
+
+  </div>
+
+  <div class="footer">v1.0 · Ekstensi Google Form Autofill PLN</div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

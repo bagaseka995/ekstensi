@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Google Form Autofill - PLN",
+  "version": "2.0",
+  "description": "Otomasi pengisian Google Form PLN UP3 Purwokerto via CDP real clicks.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "debugger",
+    "downloads",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://docs.google.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Google Form Autofill"
+  }
+}
