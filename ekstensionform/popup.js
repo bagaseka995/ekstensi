@@ -11,6 +11,7 @@ const inputNama     = document.getElementById('inputNama');
 const inputEmail    = document.getElementById('inputEmail');
 const inputFolder   = document.getElementById('inputFolder');
 const inputLimit    = document.getElementById('inputLimit');
+const inputStartFrom = document.getElementById('inputStartFrom');
 const chkUnlimited  = document.getElementById('chkUnlimited');
 const statusBar     = document.getElementById('statusBar');
 const statusText    = document.getElementById('statusText');
@@ -39,6 +40,7 @@ function setFormDisabled(disabled) {
   inputEmail.disabled  = disabled;
   inputFolder.disabled = disabled;
   inputLimit.disabled  = disabled || chkUnlimited.checked;
+  inputStartFrom.disabled = disabled;
   chkUnlimited.disabled = disabled;
 }
 
@@ -78,7 +80,7 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 // ── Inisialisasi: Pulihkan status terakhir ─────────────────────────────────────
 chrome.storage.local.get([
   'statusText', 'statusMode', 'isRunning', 
-  'lastNama', 'lastEmails', 'lastFolder', 'lastLimit', 'lastUnlimited',
+  'lastNama', 'lastEmails', 'lastFolder', 'lastLimit', 'lastUnlimited', 'lastStartFrom',
   'uploadCount'
 ], (data) => {
   if (data.lastNama)   inputNama.value   = data.lastNama;
@@ -94,6 +96,7 @@ chrome.storage.local.get([
     inputLimit.disabled = true;
     inputLimit.style.opacity = '0.4';
   }
+  if (data.lastStartFrom && data.lastStartFrom > 1) inputStartFrom.value = data.lastStartFrom;
 
   // Restore counter
   counterValue.textContent = data.uploadCount || 0;
@@ -112,6 +115,7 @@ btnStart.addEventListener('click', async () => {
   const folderName = inputFolder.value.trim();
   const unlimited  = chkUnlimited.checked;
   const limit      = unlimited ? 0 : parseInt(inputLimit.value, 10); // 0 = unlimited
+  const startFrom  = parseInt(inputStartFrom.value, 10) || 1;
 
   if (!nama) {
     setStatus('⚠️ Nama kosong!', 'error');
@@ -133,6 +137,11 @@ btnStart.addEventListener('click', async () => {
     inputLimit.focus();
     return;
   }
+  if (!unlimited && startFrom > limit) {
+    setStatus(`⚠️ "Mulai dari" (${startFrom}) tidak boleh lebih besar dari limit (${limit})!`, 'error');
+    inputStartFrom.focus();
+    return;
+  }
 
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) {
@@ -149,8 +158,8 @@ btnStart.addEventListener('click', async () => {
     formUrl = formUrl.replace('/formResponse', '/viewform');
   }
 
-  // Email pertama yang akan dipakai di iterasi 1
-  const firstEmail = emails[0];
+  // Email yang dipakai di iterasi pertama (berdasarkan startFrom)
+  const firstEmail = emails[(startFrom - 1) % emails.length];
 
   // Simpan input terakhir ke storage dan nyalakan flag botActive
   await chrome.storage.local.set({
@@ -159,6 +168,7 @@ btnStart.addEventListener('click', async () => {
     lastFolder: folderName,
     lastLimit: unlimited ? '' : limit,
     lastUnlimited: unlimited,
+    lastStartFrom: startFrom,
     
     nama: nama,
     emails: emails,
@@ -166,14 +176,14 @@ btnStart.addEventListener('click', async () => {
     folderName: folderName,
     limit: limit,              // 0 = unlimited
     unlimited: unlimited,
-    currentIndex: 1,
+    currentIndex: startFrom,       // Mulai dari angka yang ditentukan
     tabId: tab.id,
     formUrl: formUrl,
     uploadCount: 0,            // Reset counter
     
     botActive: true,
     isRunning: true,
-    statusText: `🚀 Memulai batch${unlimited ? ' (Unlimited)' : ''}: Iterasi 1 — ${firstEmail}`,
+    statusText: `🚀 Memulai batch${unlimited ? ' (Unlimited)' : ''}: Foto ke-${startFrom} — ${firstEmail}`,
     statusMode: 'running'
   });
 
