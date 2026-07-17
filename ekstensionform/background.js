@@ -469,8 +469,8 @@ async function runSingleIteration(tabId, nama, email, folderName, index, limit) 
     await sleep(400);
 
     await checkStopped();
-    await updateStatus(`🖱️ [${label}] TAHAP 1: Memilih UP3 Purwokerto…`, 'running', true);
-    await pilihDropdown(tabId, 0, 'UP3 Purwokerto');
+    await updateStatus(`🖱️ [${label}] TAHAP 1: Memilih Purwokerto…`, 'running', true);
+    await pilihDropdown(tabId, 0, 'Purwokerto');
 
     await checkStopped();
     await updateStatus(`➡️ [${label}] TAHAP 1: Klik Berikutnya…`, 'running', true);
@@ -478,9 +478,9 @@ async function runSingleIteration(tabId, nama, email, folderName, index, limit) 
 
     // ── TAHAP 2 ──────────────────────────────────────────────────────────────
     await checkStopped();
-    await updateStatus(`🖱️ [${label}] TAHAP 2: Memilih ULP Wangon…`, 'running', true);
+    await updateStatus(`🖱️ [${label}] TAHAP 2: Memilih Wangon…`, 'running', true);
     await sleep(500);
-    await pilihDropdown(tabId, 0, 'ULP Wangon');
+    await pilihDropdown(tabId, 0, 'Wangon');
 
     await checkStopped();
     await updateStatus(`➡️ [${label}] TAHAP 2: Klik Berikutnya…`, 'running', true);
