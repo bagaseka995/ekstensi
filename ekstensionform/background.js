@@ -27,7 +27,7 @@ async function checkStopped() {
 
 // ── CDP: klik nyata (isTrusted=true) ─────────────────────────────────────────
 async function cdpClick(tabId, x, y) {
-  const tgt  = { tabId };
+  const tgt = { tabId };
   const base = { x: Math.round(x), y: Math.round(y), button: 'left', modifiers: 0 };
   await chrome.debugger.sendCommand(tgt, 'Input.dispatchMouseEvent',
     { ...base, type: 'mousePressed', buttons: 1, clickCount: 1 });
@@ -39,7 +39,7 @@ async function cdpClick(tabId, x, y) {
 
 // ── CDP: tekan tombol keyboard ────────────────────────────────────────────────
 async function cdpKey(tabId, key, keyCode) {
-  const tgt  = { tabId };
+  const tgt = { tabId };
   const base = { key, code: key, keyCode, windowsVirtualKeyCode: keyCode, modifiers: 0 };
   await chrome.debugger.sendCommand(tgt, 'Input.dispatchKeyEvent', { ...base, type: 'keyDown' });
   await sleep(60);
@@ -65,7 +65,7 @@ async function fillInputs(tabId, nama, email) {
     )].filter(el => el.offsetParent !== null);
 
     function fill(el, val) {
-      const proto  = HTMLInputElement.prototype;
+      const proto = HTMLInputElement.prototype;
       const setter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
       setter ? setter.call(el, val) : (el.value = val);
       ['input', 'change', 'blur'].forEach(t =>
@@ -87,7 +87,7 @@ async function getTriggerCoords(tabId, idx) {
       ...[...document.querySelectorAll('[role="listbox"]')]
         .filter(el => el.getAttribute('aria-expanded') !== 'true'),
     ].filter((el, i, arr) => arr.indexOf(el) === i)
-     .filter(el => el.offsetParent !== null);
+      .filter(el => el.offsetParent !== null);
 
     const el = all[idx];
     if (!el) return null;
@@ -100,7 +100,7 @@ async function getTriggerCoords(tabId, idx) {
       ['mousedown', 'mouseup', 'click'].forEach(type => {
         el.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, view: window }));
       });
-    } catch (e) {}
+    } catch (e) { }
 
     return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
   }, [idx]);
@@ -151,7 +151,7 @@ async function getOptionCoords(tabId, nilai) {
       ['mousedown', 'mouseup', 'click'].forEach(type => {
         el.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, view: window }));
       });
-    } catch (e) {}
+    } catch (e) { }
 
     return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
   }, [nilai]);
@@ -166,7 +166,7 @@ async function pilihDropdown(tabId, idx, nilai) {
   await sleep(1500);
 
   const BATAS = Date.now() + 7000;
-  let oCoords  = null;
+  let oCoords = null;
 
   while (Date.now() < BATAS) {
     oCoords = await getOptionCoords(tabId, nilai);
@@ -202,7 +202,7 @@ async function pilihDropdown(tabId, idx, nilai) {
       ...[...document.querySelectorAll('[role="listbox"]')]
         .filter(el => el.getAttribute('aria-expanded') !== 'true'),
     ].filter((el, i, arr) => arr.indexOf(el) === i)
-     .filter(el => el.offsetParent !== null);
+      .filter(el => el.offsetParent !== null);
     const el = all[idx];
     if (!el) return false;
     return el.textContent.trim().toLowerCase().includes(nilai.toLowerCase());
@@ -271,7 +271,7 @@ function runInsidePickerFrame(folderName, index) {
   console.log(`[PICKER-IFRAME] FolderOpened: ${window.__pickerFolderOpened}, Kueri: "${folderName}" -> "${index}"`);
 
   const searchInput = document.querySelector('input[type="text"], input[aria-label*="Search" i], input[aria-label*="Cari" i]');
-  
+
   if (!searchInput) {
     // Jika tidak ada input pencarian, mungkin kita masih berada di tab Upload. Coba beralih ke tab "Drive Saya"
     const tabs = [...document.querySelectorAll('[role="tab"], .picker-tab-label, div, span')];
@@ -298,14 +298,14 @@ function runInsidePickerFrame(folderName, index) {
       searchInput.dispatchEvent(new Event('change', { bubbles: true }));
 
       // Cari tombol cari atau kirim event key Enter
-      const searchBtn = document.querySelector('.picker-search-button') || 
-                        document.querySelector('[aria-label*="Search" i]') || 
-                        document.querySelector('[aria-label*="Cari" i]');
+      const searchBtn = document.querySelector('.picker-search-button') ||
+        document.querySelector('[aria-label*="Search" i]') ||
+        document.querySelector('[aria-label*="Cari" i]');
       if (searchBtn) {
         searchBtn.click();
       } else {
-        const enterEvent = new KeyboardEvent('keydown', { 
-          bubbles: true, cancelable: true, key: 'Enter', code: 'Enter', keyCode: 13 
+        const enterEvent = new KeyboardEvent('keydown', {
+          bubbles: true, cancelable: true, key: 'Enter', code: 'Enter', keyCode: 13
         });
         searchInput.dispatchEvent(enterEvent);
       }
@@ -314,14 +314,14 @@ function runInsidePickerFrame(folderName, index) {
 
     // Cari item folder dari hasil pencarian
     const items = [...document.querySelectorAll('[role="option"], .picker-list-item, .picker-grid-tile, div')];
-    
+
     let folderItem = items.find(el => {
       const txt = el.textContent.replace(/\s+/g, ' ').trim().toLowerCase();
       if (txt !== folderName.toLowerCase()) return false;
-      const isFolder = el.className?.toLowerCase().includes('folder') || 
-                       el.querySelector('[class*="folder" i]') !== null ||
-                       el.getAttribute?.('aria-label')?.toLowerCase().includes('folder') ||
-                       el.getAttribute?.('data-type') === 'folder';
+      const isFolder = el.className?.toLowerCase().includes('folder') ||
+        el.querySelector('[class*="folder" i]') !== null ||
+        el.getAttribute?.('aria-label')?.toLowerCase().includes('folder') ||
+        el.getAttribute?.('data-type') === 'folder';
       return isFolder;
     });
 
@@ -340,13 +340,13 @@ function runInsidePickerFrame(folderName, index) {
       folderItem.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, view: window }));
     });
 
-    const enterEvent = new KeyboardEvent('keydown', { 
-      bubbles: true, cancelable: true, key: 'Enter', code: 'Enter', keyCode: 13 
+    const enterEvent = new KeyboardEvent('keydown', {
+      bubbles: true, cancelable: true, key: 'Enter', code: 'Enter', keyCode: 13
     });
     folderItem.dispatchEvent(enterEvent);
 
     folderItem.dispatchEvent(new MouseEvent('dblclick', { bubbles: true, cancelable: true, view: window }));
-    
+
     window.__pickerFolderOpened = true;
     return 'Folder double-clicked, waiting to open...';
   }
@@ -413,7 +413,7 @@ function runInsidePickerFrame(folderName, index) {
 
   // Sub-tahap B1: Cari file target dan klik (lalu pada polling berikutnya baru klik Sisipkan)
   const items = [...document.querySelectorAll('[role="option"], .picker-list-item, .picker-grid-tile, div')];
-  
+
   // Mencari file yang namanya persis "[index].png" atau "[index].jpg" atau "[index]"
   const targetItem = items.find(el => {
     const name = el.textContent.replace(/\s+/g, ' ').trim().toLowerCase();
@@ -422,9 +422,9 @@ function runInsidePickerFrame(folderName, index) {
 
   if (!targetItem) {
     // Scroll container hasil pencarian ke bawah secara bertahap jika belum ter-render
-    const container = document.querySelector('.picker-list-container') || 
-                      document.querySelector('.picker-grid-container') ||
-                      document.querySelector('[role="listbox"]');
+    const container = document.querySelector('.picker-list-container') ||
+      document.querySelector('.picker-grid-container') ||
+      document.querySelector('[role="listbox"]');
     if (container) {
       container.scrollTop += 150;
     }
@@ -450,7 +450,7 @@ async function runSingleIteration(tabId, nama, email, folderName, index, limit) 
   const cycleNum = Math.floor((index - 1) / limit) + 1;
   const label = `Foto ${photoNumber}/${limit} (Siklus ${cycleNum})`;
   await updateStatus(`🚀 [${label}] ✉️ ${email} — Menghubungkan debugger…`, 'running', true);
-  
+
   try {
     await chrome.debugger.attach({ tabId }, '1.3');
   } catch (err) {
@@ -500,7 +500,7 @@ async function runSingleIteration(tabId, nama, email, folderName, index, limit) 
     await checkStopped();
     await updateStatus(`📁 [${label}] TAHAP 3: Membuka Google Picker…`, 'running', true);
     await sleep(500);
-    
+
     // Klik "Tambahkan File"
     const addFileCoords = await inPage(tabId, () => {
       const btn = [...document.querySelectorAll('[role="button"]')].find(el => {
@@ -620,10 +620,10 @@ async function runSingleIteration(tabId, nama, email, folderName, index, limit) 
       submitted = await inPage(tabId, () => {
         const txt = document.body?.innerText?.toLowerCase() ?? '';
         return txt.includes('thanks for submitting') ||
-               txt.includes('terima kasih') ||
-               txt.includes('jawaban anda telah direkam') ||
-               txt.includes('your response has been recorded') ||
-               txt.includes('kirim jawaban lain');
+          txt.includes('terima kasih') ||
+          txt.includes('jawaban anda telah direkam') ||
+          txt.includes('your response has been recorded') ||
+          txt.includes('kirim jawaban lain');
       });
       if (submitted) break;
       await sleep(700);
@@ -696,7 +696,7 @@ async function runSingleIteration(tabId, nama, email, folderName, index, limit) 
     });
   } finally {
     isBotRunning = false; // Pastikan flag direset jika terjadi error/selesai
-    try { await chrome.debugger.detach({ tabId }); } catch (_) {}
+    try { await chrome.debugger.detach({ tabId }); } catch (_) { }
   }
 }
 
@@ -715,7 +715,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   const data = await chrome.storage.local.get([
     'botActive', 'tabId', 'nama', 'emails', 'email', 'folderName', 'currentIndex', 'limit'
   ]);
-  
+
   if (!data.botActive || tabId !== data.tabId) return;
 
   const index = parseInt(data.currentIndex, 10) || 1;
